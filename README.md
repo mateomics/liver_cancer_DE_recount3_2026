@@ -1,111 +1,254 @@
-# RNA-seq 2026 course 
+# Hepatocellular Carcinoma Differential Expression Analysis with recount3
 
-> RNA-seq Analysis from recount3
+## Overview
 
-RNA-seq differential expression analysis project using publicly available data from recount3.
+This project performs a differential gene expression analysis of hepatocellular carcinoma (HCC) using publicly available RNA-seq data accessed through the recount3 resource.
 
-## Project Overview
+The workflow leverages edgeR and limma-voom to identify transcriptional differences between tumor and matched normal liver tissue while accounting for patient-specific effects through a paired experimental design.
 
-This repository contains an RNA-seq analysis workflow developed as part of Dr. Leonardo Collado's LCG22 course project (UNAM). The dataset analyzed corresponds to:
+---
 
-- **Dataset:** SRP068976  
-- **Platform:** recount3  
+## Dataset
 
-The objective of this project is to explore gene expression patterns and perform downstream analyses using reproducible bioinformatics workflows.
+**Project:** SRP068976
+
+**Study:** RNA-seq of paired hepatocellular carcinoma samples
+
+**Source:** recount3
+
+**Samples:**
+
+* 50 Normal liver samples
+* 49 Tumor liver samples
+* 99 total RNA-seq samples
+
+All samples correspond to liver tissue, allowing a direct comparison between tumor and normal conditions.
+
+---
+
+## Objectives
+
+* Retrieve RNA-seq data from recount3.
+* Explore and curate project metadata.
+* Perform quality assessment.
+* Filter lowly expressed genes.
+* Normalize count data.
+* Model paired tumor-normal samples.
+* Identify differentially expressed genes.
+* Visualize global transcriptomic variation.
+
+---
+
+## Workflow
+
+```text
+recount3
+    ↓
+Metadata Exploration
+    ↓
+Quality Assessment
+    ↓
+Gene Filtering
+    ↓
+edgeR Normalization
+    ↓
+limma-voom Transformation
+    ↓
+Linear Modeling
+    ↓
+Differential Expression Analysis
+    ↓
+Visualization & Interpretation
+```
+
+---
+
+## Methods
+
+### Data Retrieval
+
+The dataset was downloaded directly from recount3 using the Bioconductor package:
+
+* recount3
+
+A `RangedSummarizedExperiment` object was constructed containing:
+
+* 63,856 annotated features
+* 99 RNA-seq samples
+
+---
+
+### Experimental Design
+
+Samples were classified according to:
+
+```text
+Diagnosis
+├── Normal
+└── Tumor
+```
+
+Because the study contains matched tumor-normal pairs from the same patients, patient identity was incorporated into the statistical model.
+
+Design formula:
+
+```R
+~ patient + diagnosis
+```
+
+This approach isolates tumor-associated transcriptional changes while controlling for inter-individual variation.
+
+---
+
+### Quality Control
+
+Quality assessment included:
+
+* Assigned gene proportion
+* Sample-level QC metrics
+* Diagnosis-specific QC comparisons
+
+Results showed:
+
+* Median assigned gene proportion ≈ 77.8%
+* Mean assigned gene proportion ≈ 77.1%
+
+No systematic quality differences were observed between tumor and normal samples.
+
+---
+
+### Gene Filtering
+
+Lowly expressed genes were removed prior to analysis:
+
+```R
+gene_means > 0.1
+```
+
+This step reduces statistical noise and improves power.
+
+---
+
+### Normalization
+
+Normalization was performed using:
+
+* edgeR
+* TMM normalization (`calcNormFactors()`)
+
+The normalized counts were subsequently transformed using:
+
+* limma-voom
+
+to estimate the mean-variance relationship and prepare the data for linear modeling.
+
+---
+
+### Differential Expression Analysis
+
+Linear models were fitted using:
+
+* limma
+* empirical Bayes moderation (`eBayes()`)
+
+Primary contrast:
+
+```text
+Tumor vs Normal
+```
+
+Statistical significance was evaluated using:
+
+```text
+FDR < 0.05
+```
+
+---
+
+## Results
+
+### Differentially Expressed Genes
+
+After multiple-testing correction:
+
+```text
+27,995 significant genes
+(FDR < 0.05)
+```
+
+were identified as differentially expressed between tumor and normal liver tissue.
+
+Representative highly significant genes include:
+
+* CDCA8
+* CDKN3
+* KIFC1
+* KIF20A
+* NUF2
+* PTTG1
+
+These genes are associated with cell-cycle progression and proliferative processes frequently altered in cancer.
+
+---
+
+### Visualization
+
+The analysis includes:
+
+* Mean-variance trend (voom)
+* MA plot
+* Volcano plot
+* Heatmap of top 50 DEGs
+* Multidimensional scaling (MDS)
+
+The heatmap and MDS analyses demonstrate a clear separation between tumor and normal samples, indicating strong global transcriptional differences associated with disease state.
 
 ---
 
 ## Repository Structure
 
-```
+```text
 .
-├── images
-│   ├── heatmap.png
-│   ├── MA_plot.png
-│   ├── mds.png
-│   ├── QC_boxplot.png
-│   ├── QC_histogram.png
-│   ├── volcano_plot.png
-│   └── voom_plot.png
-├── LICENSE
-├── R
-│   ├── report_files
-│   │   ├── figure-html
-│   │   │   ├── unnamed-chunk-15-1.png
-│   │   │   ├── unnamed-chunk-16-1.png
-│   │   │   ├── unnamed-chunk-20-1.png
-│   │   │   ├── unnamed-chunk-23-1.png
-│   │   │   ├── unnamed-chunk-23-2.png
-│   │   │   ├── unnamed-chunk-24-1.png
-│   │   │   └── unnamed-chunk-25-1.png
-│   │   └── libs
-│   │       ├── bootstrap
-│   │       │   ├── bootstrap-0cf178164be81c6ad854e95b21275c80.min.css
-│   │       │   ├── bootstrap-icons.css
-│   │       │   ├── bootstrap-icons.woff
-│   │       │   └── bootstrap.min.js
-│   │       ├── clipboard
-│   │       │   └── clipboard.min.js
-│   │       └── quarto-html
-│   │           ├── anchor.min.js
-│   │           ├── axe
-│   │           │   └── axe-check.js
-│   │           ├── popper.min.js
-│   │           ├── quarto.js
-│   │           ├── quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css
-│   │           ├── tabsets
-│   │           │   └── tabsets.js
-│   │           ├── tippy.css
-│   │           └── tippy.umd.min.js
-│   └── report.qmd
-├── README.md
-├── references.bib
-└── results
-    ├── report.html
-    └── report.pdf
-
+├── data/
+├── scripts/
+├── figures/
+├── results/
+├── report/
+└── README.md
 ```
 
 ---
 
-## Requirements
+## Technologies
 
-- R (≥ 4.3 recommended)
-- Quarto
-- Required R packages:
-  - recount3
-  - DESeq2
-  - tidyverse
-  - SummarizedExperiment
-  - ggplot2
+* R
+* Bioconductor
+* recount3
+* edgeR
+* limma
+* voom
+* ggplot2
+* pheatmap
 
-Install packages in R:
+---
 
-```r
-install.packages("tidyverse")
-BiocManager::install(c("recount3", "DESeq2", "SummarizedExperiment"))
-```
+## Skills Demonstrated
 
-## How to reproduce my analysis
-1. Clone my repository (`git clone https://github.com/mateomics/rnaseq_2026_project`)
-2. Render the `.qmd` file on your new repository (`quarto render report.qmd`)
+* RNA-seq analysis
+* Differential expression analysis
+* Cancer transcriptomics
+* Bioconductor workflows
+* Statistical modeling
+* Paired experimental design
+* High-throughput sequencing analysis
+* Data visualization
+* Reproducible research
 
-## What does the report includes?
+---
 
-The rendered report includes:
+## References
 
-- Data acquisition
-
-- Preprocessing
-
-- Exploratory analysis
-
-- Differential expression analysis
-
-- Visualization of results
-
-## Author
-
-Mateo Jimenez-Sotelo
-B.Sc. in Genomic Sciences, LCG, UNAM
-February 2026
+* Collado-Torres et al. (2017). Reproducible RNA-seq Analysis Using Recount2.
+* Law et al. (2014). Voom: Precision Weights Unlock Linear Model Analysis Tools for RNA-seq Read Counts.
+* Ritchie et al. (2015). Limma Powers Differential Expression Analyses for RNA-Sequencing and Microarray Studies.
+* Robinson et al. (2010). edgeR: A Bioconductor Package for Differential Expression Analysis of Digital Gene Expression Data.
